@@ -1,0 +1,50 @@
+[
+
+  {
+    "generic_information" : {
+      "job_title" : "backend developer",
+      "date_of_publish" : "2026-06-10",
+      "description" : "lorem ipsum be",
+      "which_platform_was_it_found_on" : "linkedin",
+      "company" : "important comp inc",
+      "location" : "ankara",
+      "mode" : 1
+    },
+    "found_on" : "2026-06-12",
+    "found_by" : "backend finder",
+    "application_link" : "https://linked.co/apply"
+  },
+
+  {
+    "generic_information" : {
+      "job_title" : "fullstack developer",
+      "date_of_publish" : "2026-06-10",
+      "description" : "lorem ipsum fs",
+      "which_platform_was_it_found_on" : "linkedin",
+      "company" : "even more important company inc",
+      "location" : "ankara",
+      "mode" : 1
+    },
+
+    "found_on" : "2026-06-12",
+    "found_by" : "fullstack finder",
+    "application_link" : "https://linked.co/apply"
+  },
+
+  {
+    "generic_information" : {
+      "job_title" : "rust developer",
+      "date_of_publish" : "2026-06-10",
+      "description" : "lorem ipsum be",
+      "which_platform_was_it_found_on" : "linkedin",
+      "company" : "the imperium of man",
+      "location" : "ankara",
+      "mode" : 1
+    },
+
+    "found_on" : "2026-06-12",
+    "found_by" : "rust finder",
+    "application_link" : "https://linked.co/apply"
+  }
+
+]

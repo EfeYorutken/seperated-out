@@ -1,0 +1,44 @@
+[
+
+  {
+    "id" : 0,
+    "name" : "backend finder",
+    "crawling_start_url" : "https://linkedin.com",
+    "where_to_look_and_how" : [{
+      "selectors" : [],
+      "keywords" : ["nodejs", "typescript", "graphql"]
+    }],
+    "found_positions_url" : [],
+    "what_to_do_before_checking" : [ ],
+    "platform_name" : "linkedin"
+  },
+  {
+
+    "id" : 1,
+    "name" : "fullstack finder",
+    "crawling_start_url" : "https://linkedin.com",
+    "where_to_look_and_how" : [{
+      "selectors" : [],
+      "keywords" : ["nodejs", "react", "typescript"]
+    }],
+    "found_positions_url" : [],
+    "what_to_do_before_checking" : [ ],
+    "platform_name" : "indeed"
+
+  },
+  {
+
+    "id" : 2,
+    "name" : "rust finder",
+    "crawling_start_url" : "https://linkedin.com",
+    "where_to_look_and_how" : [{
+      "selectors" : [],
+      "keywords" : ["rust", "yew", "tokio"]
+    }],
+    "found_positions_url" : [],
+    "what_to_do_before_checking" : [ ],
+    "platform_name" : "rustjobs"
+
+  }
+
+]

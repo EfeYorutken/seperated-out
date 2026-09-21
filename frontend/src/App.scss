@@ -1,0 +1,44 @@
+
+.borderable{
+  border : solid 1px black;
+}
+
+.model{
+  width : 70%;
+  height : 60%;
+  position: absolute;
+  inset-block-start: 0px;
+  inset-block-end: 0px;
+  margin: auto;
+}
+
+.edit_profiles{
+  width : 100%;
+  height : 90%;
+  overflow : scroll;
+  .profile_element{overflow : hidden;}
+}
+
+.profiles{}
+.graph{}
+.positions{
+
+  .position{
+
+    display : flex;
+
+    .basics{
+
+      h3{ margin : 0; }
+
+      .specific{ margin : 0; }
+
+
+    }
+
+  }
+
+
+}
+
+

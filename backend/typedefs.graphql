@@ -1,0 +1,94 @@
+type Query{
+
+  get_profiles : [Profile]
+  get_profile_named : Profile
+  get_positions : [Position]
+
+}
+
+type Mutation{
+
+  new_profile( profile : ProfileInput) : Boolean
+
+  edit_profile(profile : ProfileInput) : Boolean
+
+}
+
+enum Action { CLICK, TYPE }
+enum Mode { ON_SITE, REMOTE, HYBRID }
+
+type SelectorKeyWordPair{
+  selector : String
+  keywords : [String]
+}
+input SelectorKeyWordPairInput{
+  selector : String
+  keywords : [String]
+}
+
+input ActionSelectorPairInput{
+  id : ID
+  action : Action
+  selector : String
+}
+
+type ActionSelectorPair{
+  id : ID
+  action : Action
+  selector : String
+}
+
+input ProfileEditInput{
+
+  id : ID!
+  name : String
+  platform_name : String
+  crawling_start_url : String
+  where_to_look_and_how : [SelectorKeyWordPairInput]
+  found_positions_url : [String]
+  what_to_do_before_checking : [ ActionSelectorPairInput ]
+
+}
+input ProfileInput{
+
+  id : ID
+  name : String
+  platform_name : String
+  crawling_start_url : String
+  where_to_look_and_how : [SelectorKeyWordPairInput]
+  found_positions_url : [String]
+  what_to_do_before_checking : [ ActionSelectorPairInput ]
+
+}
+
+type Profile{
+
+  id : ID
+  name : String
+  platform_name : String
+  crawling_start_url : String
+  where_to_look_and_how : [SelectorKeyWordPair]
+  found_positions_url : [String]
+  what_to_do_before_checking : [ ActionSelectorPair ]
+
+}
+
+type JobInformation {
+  id : ID
+  job_title : String
+  date_of_publish : String
+  description : String
+  which_platform_was_it_found_on : String
+  company : String
+  location : String
+  mode : Mode 
+}
+
+type Position{
+
+  id : ID
+  generic_information : JobInformation
+  found_by : String
+  application_link : String
+
+}
