@@ -14,7 +14,11 @@ export type Profile = {
   crawling_start_url : string;
   //a mapping from what selector is to be looked at and what words need to
   //be looked for there
-  where_to_look_and_how : Map<SELECTOR, string[]>;
+  //where_to_look_and_how : Map<SELECTOR, string[]>;
+  where_to_look_and_how : {
+    keywords : string[];
+    selector : string;
+  };
   //found positions, will be used for committing to db AND sifting through
   found_positions_url : string[];
   //steps that should be taken before the job posts are checked

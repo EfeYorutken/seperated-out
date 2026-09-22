@@ -31,7 +31,10 @@ const EditProfile = ( {profile, is_editing, unset_edited_profile} : params )=>{
     {
     name : '',
     crawling_start_url : '',
-    where_to_look_and_how : {},
+    where_to_look_and_how : {
+      selector : '',
+      keywords : []
+    },
     found_positions_url : [] as string[],
     what_to_do_before_checking : [] as {action : Action, selector: SELECTOR}[] ,
     platform_name : ''
@@ -62,13 +65,14 @@ const EditProfile = ( {profile, is_editing, unset_edited_profile} : params )=>{
 
     <button onClick={ async()=>{
 
-      const {__typename, ...w2lah} = obj_to_send.where_to_look_and_how;
-      obj_to_send.where_to_look_and_how = w2lah[0];
+      //const {__typename, ...w2lah} = obj_to_send.where_to_look_and_how;
+      //obj_to_send.where_to_look_and_how = w2lah[0];
 
       if(is_editing){
         await edit({ variables : { profile : obj_to_send } });
       }
       else{
+        console.log(`sending back ${JSON.stringify(obj_to_send)}`);
         await create({variables : {profile : obj_to_send}})
       }
 

@@ -1,8 +1,8 @@
-import { CombinedGraphQLErrors, gql } from "@apollo/client";
+import { gql } from "@apollo/client";
 import { useQuery } from "@apollo/client/react";
 
 import PositionElement from "./position_element";
-import type { JobInformation, Position } from '../../../global_types/position';
+import type { Position } from '../../../global_types/position';
 
 const Positions = ()=>{
 

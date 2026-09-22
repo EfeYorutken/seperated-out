@@ -22,7 +22,7 @@ const EditProfiles = ()=>{
 
   `;
 
-  let [edited_profile, mut_edited_profile] = useState<Profile>(undefined);
+  let [edited_profile, mut_edited_profile] = useState<Profile | undefined>(undefined);
   let [is_editing, mut_is_editing] = useState(false);
 
   const unset_profile_edit = ()=>{

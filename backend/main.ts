@@ -2,6 +2,8 @@ import {ApolloServer} from '@apollo/server';
 import { startStandaloneServer } from '@apollo/server/standalone';
 import {resolvers} from './resolvers.ts';
 
+import { init_db } from "./db_stuff.ts";
+
 const typedefs = await Deno.readTextFile('typedefs.graphql');
 
 const server = new ApolloServer({

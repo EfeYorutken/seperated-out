@@ -41,6 +41,7 @@ const Profiles = ()=>{
 
     {
       data.get_profiles.map((prof )=>{
+        console.log(`got back ${JSON.stringify(prof)}`);
         return (<ProfileElement name={prof.name}/>)
       })
     }

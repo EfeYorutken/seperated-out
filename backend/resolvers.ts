@@ -1,41 +1,56 @@
 import type { Profile} from '../global_types/profile.ts';
-import type {Action} from '../global_types/profile.ts';
-import type { Position } from '../global_types/position.ts';
 
-import raw_positions from "./positions_mock.json" with {type: "json"};
-import raw_profiles from "./profiles_mock.json" with {type: "json"};
+import * as db_manager from './db_stuff.ts';
 
-import { db_manager } from "./db_stuff.ts";
+type ProfileInput = Profile;
+type ProfileEditInput = Profile;
 
-let positions = raw_positions as Position[];
-let profiles = raw_profiles as Profile[];
+if(!(await db_manager.init_db())){
+  console.error(`[RESOLVER ERROR] failed to initilize mongodb connection`);
+}
+else{
+  console.log('[DATABASE INITILIZED]');
+}
 
+const api_call_to = (endpoint_name : string) => {
+  console.log(`[API CALL TO ${endpoint_name}]`);
+};
 
 export const resolvers = {
 
   Query : {
 
-    get_profiles : ()=>{ return db_manager.get_profiles() },//db.doc.find
-    get_positions : ()=>{ return positions },
-      get_profile_named : ()=>{ return null },
+      get_profiles : async ()=>{
+        api_call_to('get_profiles');
+        return await db_manager.get_profiles() 
+      },
+      get_positions : async ()=>{
+        api_call_to('get_positions');
+        return await db_manager.get_positions() 
+      },
 
   },
 
     Mutation : {
 
-      new_profile : (
+      new_profile : async(
         _parent : unknown, args : ProfileInput
-      ) : boolean  => {
+      ) : Promise<boolean>  => {
 
-        return db_manager.add_profile( args );
+        api_call_to('new_profile');
+        return await db_manager.add_profile( args );
 
       },
 
-      edit_profile : ( 
-                      _parent : unknown, args : ProfileEditInput 
-                     ) : boolean => {
-                       return db_manager.edit_profile();
-                     }
+      edit_profile : async( 
+                           _parent : unknown, args : ProfileEditInput 
+                          ) : Promise<boolean> => {
+
+                            api_call_to('edit_profile');
+                            const {id, ...args_wo_id} = args;
+
+                            return await db_manager.edit_profile(id, args_wo_id);
+                          }
 
     }
 
