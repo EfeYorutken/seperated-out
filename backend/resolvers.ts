@@ -38,7 +38,7 @@ export const resolvers = {
       ) : Promise<boolean>  => {
 
         api_call_to('new_profile');
-        return await db_manager.add_profile( args );
+        return await db_manager.add_profile( args.profile );
 
       },
 
@@ -47,9 +47,8 @@ export const resolvers = {
                           ) : Promise<boolean> => {
 
                             api_call_to('edit_profile');
-                            const {id, ...args_wo_id} = args;
 
-                            return await db_manager.edit_profile(id, args_wo_id);
+                            return await db_manager.edit_profile(args.profile.id, args.profile);
                           }
 
     }

@@ -29,6 +29,7 @@ const EditProfile = ( {profile, is_editing, unset_edited_profile} : params )=>{
 
   const default_profile : Profile = 
     {
+    id : -1,
     name : '',
     crawling_start_url : '',
     where_to_look_and_how : {
@@ -65,11 +66,13 @@ const EditProfile = ( {profile, is_editing, unset_edited_profile} : params )=>{
 
     <button onClick={ async()=>{
 
-      //const {__typename, ...w2lah} = obj_to_send.where_to_look_and_how;
-      //obj_to_send.where_to_look_and_how = w2lah[0];
-
       if(is_editing){
-        await edit({ variables : { profile : obj_to_send } });
+
+        console.log(`seding ${JSON.stringify(obj_to_send)} to edit`);
+
+        if(await edit({ variables : { profile : obj_to_send } })){
+          alert(`you have editted the profile \'${obj_to_send.name}\'`);
+        }
       }
       else{
         console.log(`sending back ${JSON.stringify(obj_to_send)}`);

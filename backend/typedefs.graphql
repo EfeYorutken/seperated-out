@@ -52,7 +52,7 @@ input ProfileEditInput{
 
 input ProfileInput{
 
-  id : ID
+  id : ID!
   name : String
   platform_name : String
   crawling_start_url : String

@@ -1,4 +1,3 @@
-//line 107
 import { Db,MongoClient } from "mongodb";
 
 import type { Profile } from '../global_types/profile.ts';
@@ -67,10 +66,6 @@ export const get_profiles = async() : Promise<Profile[]>=>{
     .find()
     .toArray();
 
-    res = res.map(d => { return d.profile; });
-
-    console.log(`sending back the profle ${JSON.stringify(res)}`);
-
     return res;
   }
 
@@ -91,9 +86,23 @@ export const get_positions = async() : Promise<Position[]>=>{
   return [];
 };
 
-export const add_profile = async ( profile : ProfileWOId ) : Promise<boolean>=>{
+const get_profile_count = async() : Promise<number> =>{
+
+  const res = await db!.collection('profiles')
+  .find()
+  .toArray();
+
+  return res.length;
+
+};
+
+export const add_profile = async ( profile : Profile ) : Promise<boolean>=>{
   if(!error_if_needed()){
-    console.log('adding profile');
+
+    const id2add = await get_profile_count();
+
+    profile.id = id2add;
+
     await db!.collection('profiles').insertOne( profile );
     return true;
   }
@@ -102,18 +111,23 @@ export const add_profile = async ( profile : ProfileWOId ) : Promise<boolean>=>{
 
 export const edit_profile = async(id : number, new_values : Partial<ProfileWOId>) 
 : Promise<boolean>=>{
+
   if(!error_if_needed()){
 
-    //THIS IS THE PROBLEM, RUN AND CHECK THE DB FOR FIELDS
-    console.log('editing profile');
-    new_values.id = id;
-    await db!.collection('profiles').updateOne(
-      { id : id },
-      //if the unintended fields are being set to 'null' or smt similar, this is the reason
-      { $set : new_values }
-    );
+    try{
 
-    return true;
+      //if the unintended fields are being set to 'null' or smt similar, this is the reason
+      await db!.collection('profiles').updateOne(
+        { id : parseInt(id) },
+        { $set : new_values }
+      );
+
+      return true;
+    }
+    catch(err){
+      console.error(`[EDIT PROFILE ERROR] ${err}`);
+      return false;
+    }
   }
   return false;
 };
