@@ -17,7 +17,7 @@ export type Profile = {
   //where_to_look_and_how : Map<SELECTOR, string[]>;
   where_to_look_and_how : {
     keywords : string[];
-    selector : string;
+    selectors : string[];
   };
   //found positions, will be used for committing to db AND sifting through
   found_positions_url : string[];

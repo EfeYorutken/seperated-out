@@ -66,6 +66,10 @@ export const get_profiles = async() : Promise<Profile[]>=>{
     .find()
     .toArray();
 
+    //const test = res.map(r =>{
+    //  r.where_to_look_and_how;
+    //} );
+
     return res;
   }
 
@@ -118,7 +122,7 @@ export const edit_profile = async(id : number, new_values : Partial<ProfileWOId>
 
       //if the unintended fields are being set to 'null' or smt similar, this is the reason
       await db!.collection('profiles').updateOne(
-        { id : parseInt(id) },
+        { id : id },
         { $set : new_values }
       );
 

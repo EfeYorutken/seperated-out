@@ -33,7 +33,7 @@ const EditProfile = ( {profile, is_editing, unset_edited_profile} : params )=>{
     name : '',
     crawling_start_url : '',
     where_to_look_and_how : {
-      selector : '',
+      selectors : [],
       keywords : []
     },
     found_positions_url : [] as string[],
@@ -56,7 +56,7 @@ const EditProfile = ( {profile, is_editing, unset_edited_profile} : params )=>{
     <input type="url" id="begin_url" placeholder={obj_to_send.crawling_start_url} onChange={ (e)=>{ obj_to_send.crawling_start_url = e.target.value } }/><br/>
 
     <label>crawl process</label><br/>
-    <button onClick={()=>{alert('implement this')}}>how to crawl</button><br/>
+    <button onClick={()=>{ alert('implement this with puppeteer'); }}>how to crawl</button><br/>
 
     <label>keywords</label><br/>
     <textarea /><br/>
@@ -71,7 +71,6 @@ const EditProfile = ( {profile, is_editing, unset_edited_profile} : params )=>{
         console.log(`seding ${JSON.stringify(obj_to_send)} to edit`);
 
         if(await edit({ variables : { profile : obj_to_send } })){
-          alert(`you have editted the profile \'${obj_to_send.name}\'`);
         }
       }
       else{

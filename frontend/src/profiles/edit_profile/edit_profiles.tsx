@@ -14,7 +14,8 @@ const EditProfiles = ()=>{
     get_profiles{
       id
       name
-      where_to_look_and_how{ keywords selector }
+      crawling_start_url
+      where_to_look_and_how{ keywords selectors }
       platform_name
     }
 
@@ -40,18 +41,15 @@ const EditProfiles = ()=>{
 
   const clean_data = data.get_profiles.map( dp => {
 
-    return {
-      id : dp.id,
-      name : dp.name,
-      where_to_look_and_how : dp.where_to_look_and_how.map(wtl => {
-        return {
-          keywords : wtl.keywords,
-          selector : wtl.selector
-        }
-      }),
-      platform_name : dp.platform_name
-    };
+    const { __typename, ...clean_data } = dp;
 
+    clean_data.where_to_look_and_how = clean_data.where_to_look_and_how.map( w2lah => {
+      const {__typename, ...selector_word_pair} = w2lah;
+      console.log(selector_word_pair);
+      return selector_word_pair;
+    } );
+
+    return clean_data;
   } );
 
   return (

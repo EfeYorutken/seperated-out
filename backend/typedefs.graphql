@@ -3,6 +3,7 @@ type Query{
   get_profiles : [Profile]
   get_profile_named : Profile
   get_positions : [Position]
+  get_page_doc( page_url : String ) : String
 
 }
 
@@ -18,11 +19,11 @@ enum Action { CLICK, TYPE }
 enum Mode { ON_SITE, REMOTE, HYBRID }
 
 type SelectorKeyWordPair{
-  selector : String
+  selectors : [String]
   keywords : [String]
 }
 input SelectorKeyWordPairInput{
-  selector : String
+  selectors : [String]
   keywords : [String]
 }
 
