@@ -1,10 +1,7 @@
 import Graph from './graph/graph'
 import Positions from './positions/positions'
 import Profiles from './profiles/profiles'
-import Modal from './modal/modal'
-
-import { useState } from 'react'
-
+import DorkSessions from './holds/dork_sessions'
 import './App.scss'
 
 function App() {
@@ -16,6 +13,7 @@ function App() {
     <Graph />
     <Positions />
     <Profiles />
+    <DorkSessions />
 
     </>
 

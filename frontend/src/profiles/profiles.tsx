@@ -6,6 +6,8 @@ import ProfileElement from "./profile_element";
 import EditProfiles from "./edit_profile/edit_profiles";
 import Modal from "../modal/modal";
 
+type NamesQuery = { get_profiles : { name : string }[] };
+
 const Profiles = ()=>{
 
   const [ open, mut_open ] = useState(false);
@@ -21,7 +23,7 @@ const Profiles = ()=>{
   }
   `;
 
-  const {loading, error, data} = useQuery(profile_q);
+  const {loading, error, data} = useQuery<NamesQuery>(profile_q);
 
   if(loading){ return ( <div>loading..</div> ); }
   else if(error){
@@ -40,9 +42,9 @@ const Profiles = ()=>{
     <button onClick={()=>{mut_open(true);}}>edit profiles</button>
 
     {
-      data.get_profiles.map((prof )=>{
-        console.log(`got back ${JSON.stringify(prof)}`);
-        return (<ProfileElement name={prof.name}/>)
+      //the result comes back masked, this is the one place the shape is pinned
+      (data as NamesQuery).get_profiles.map((prof, at)=>{
+        return (<ProfileElement key={prof.name + at} name={prof.name}/>)
       })
     }
     

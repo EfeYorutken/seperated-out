@@ -3,7 +3,10 @@ type Query{
   get_profiles : [Profile]
   get_profile_named : Profile
   get_positions : [Position]
-  get_page_doc( page_url : String ) : String
+  crawling_session( session_id : ID! ) : CrawlingSession
+  positions_over_time : PositionsOverTime
+  #the dorks google put a wall in front of, waiting on the user to solve
+  dork_holds : [DorkHold]
 
 }
 
@@ -13,53 +16,109 @@ type Mutation{
 
   edit_profile(profile : ProfileInput) : Boolean
 
+  #the copy gets its own id and a name that is not taken yet, everything else
+  #is carried over untouched
+  clone_profile( id : ID! ) : Boolean
+
+  #only the profile document goes, found positions and their hashes stay
+  delete_profile( id : ID! ) : Boolean
+
+  #drops the dedupe record for a found position, the position itself stays.
+  #the crawler has nothing left to recognise it by, so it will store it again
+  forget_position_hash( url : String! ) : Boolean
+
+  #drops the found position itself and keeps its hash, so the crawler still
+  #counts it as seen and will not bring it back
+  remove_position( id : ID! ) : Boolean
+
+  #a recording needs no start url at all: the dork built from these fields
+  #picks the page the recorder window opens on
+  start_crawling_session( start : CrawlStartInput! ) : CrawlingSession
+
+  abort_crawling_session( session_id : ID! ) : Boolean
+
+  #opens a headful browser on the crawler chrome profile, pointed at the exact
+  #google search a held dork was pushed off, so the user can solve the wall
+  #once and the cookies carry into the headless dorks
+  start_solve_session( hold_id : ID! ) : Boolean
+
+  #closes a solve window without solving anything, the hold stays on the shelf
+  abort_solve_session( hold_id : ID! ) : Boolean
+
+  #the user does not want to solve it, throw the hold away
+  dismiss_dork_hold( hold_id : ID! ) : Boolean
+
+  #re-run the profile behind a solved hold right away, no waiting for the tick
+  retry_dork_hold( hold_id : ID! ) : Boolean
+
 }
 
-enum Action { CLICK, TYPE }
-enum Mode { ON_SITE, REMOTE, HYBRID }
+enum DorkHoldCause { CAPTCHA CONSENT }
+enum DorkHoldState { HOLDING SOLVING SOLVED DISCARDED }
 
-type SelectorKeyWordPair{
-  selectors : [String]
-  keywords : [String]
-}
-input SelectorKeyWordPairInput{
-  selectors : [String]
-  keywords : [String]
-}
-
-input ActionSelectorPairInput{
+type DorkHold{
   id : ID
-  action : Action
-  selector : String
+  profile_id : Int
+  profile_name : String
+  #the exact query google blocked, shown in the list
+  dork : String
+  cause : DorkHoldCause
+  state : DorkHoldState
+  created_at : String
+  solved_at : String
 }
 
-type ActionSelectorPair{
-  id : ID
-  action : Action
-  selector : String
+enum CrawlingSessionStatus { PENDING RECORDING DONE FAILED }
+
+type CrawlingSession{
+  session_id : ID
+  status : CrawlingSessionStatus
+  error : String
+  result : SelectorCapture
+  #the page the recorder opened on, the dork's first answer
+  page_url : String
+  #set while the dork behind the recording is parked on an anti-bot hold
+  held_session_id : String
 }
 
-input ProfileEditInput{
+#what one recording session captured: the selectors the user pointed at.
+#post_selector comes from the middle clicks, description_selector from the
+#right clicks
+type SelectorCapture{
+  post_selector : [String]
+  description_selector : [String]
+}
 
-  id : ID!
-  name : String
-  platform_name : String
-  crawling_start_url : String
-  where_to_look_and_how : [SelectorKeyWordPairInput]
-  found_positions_url : [String]
-  what_to_do_before_checking : [ ActionSelectorPairInput ]
-
+input CrawlStartInput{
+  #without protocol or path, feeds site: in the dork, required
+  platform_domain : String!
+  #the url section that separates a posting, feeds inurl: in the dork, required
+  url_section : String!
+  #optional filters, included in the dork only when present
+  keywords : [String]
+  anti_keywords : [String]
+  publish_after : String
 }
 
 input ProfileInput{
 
   id : ID!
   name : String
-  platform_name : String
-  crawling_start_url : String
-  where_to_look_and_how : [SelectorKeyWordPairInput]
-  found_positions_url : [String]
-  what_to_do_before_checking : [ ActionSelectorPairInput ]
+  #without protocol or path, like 'www.myjobpage.com', feeds site: in the dork
+  platform_domain : String
+  #a section of the url that separates a job post, like '/open-positions/',
+  #feeds inurl: in the dork
+  url_section : String
+  #optional 'find jobs after', a yyyy-mm-dd date, feeds after: in the dork
+  publish_after : String
+  #the elements worth reading, recorded by a middle click
+  post_selector : [String]
+  #the sections every posting holds, recorded by right clicks
+  description_selector : [String]
+  #what the dork searches for
+  keywords : [String]
+  #what the dork discards, each one an exclusion in the query
+  anti_keywords : [String]
 
 }
 
@@ -67,11 +126,14 @@ type Profile{
 
   id : ID
   name : String
-  platform_name : String
-  crawling_start_url : String
-  where_to_look_and_how : [SelectorKeyWordPair]
-  found_positions_url : [String]
-  what_to_do_before_checking : [ ActionSelectorPair ]
+  platform_domain : String
+  url_section : String
+  publish_after : String
+  post_selector : [String]
+  description_selector : [String]
+  keywords : [String]
+  #a hit on one of these in the dork throws the post away
+  anti_keywords : [String]
 
 }
 
@@ -83,7 +145,6 @@ type JobInformation {
   which_platform_was_it_found_on : String
   company : String
   location : String
-  mode : Mode 
 }
 
 type Position{
@@ -93,4 +154,25 @@ type Position{
   found_by : String
   application_link : String
 
+}
+
+type ProfileSeriesPoint{
+  #start of the bucket this total covers
+  at : String!
+  #cumulative positions found by that profile up to the end of this bucket
+  total : Int!
+}
+
+type ProfileSeries{
+  profile_id : ID!
+  profile_name : String!
+  points : [ProfileSeriesPoint]!
+}
+
+type PositionsOverTime{
+  #the width the series actually used, always a whole multiple of the crawl interval
+  bucket_ms : Int!
+  crawl_interval_ms : Int!
+  generated_at : String!
+  series : [ProfileSeries]!
 }

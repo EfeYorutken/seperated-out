@@ -1,0 +1,5 @@
+# these hold live login sessions, they are credentials and never get committed
+.crawler_chrome/
+.recorder_chrome/
+
+node_modules/

@@ -3,6 +3,7 @@ import { startStandaloneServer } from '@apollo/server/standalone';
 import {resolvers} from './resolvers.ts';
 
 import { init_db } from "./db_stuff.ts";
+import { start_scheduler } from './scheduler.ts';
 
 const typedefs = await Deno.readTextFile('typedefs.graphql');
 
@@ -18,3 +19,11 @@ const {url} = await startStandaloneServer(server, {
 });
 
 console.log(`server listening on ${url}`);
+
+//importing resolvers.ts already connected the db, so this only re-checks it
+if(await init_db()){
+  start_scheduler();
+}
+else{
+  console.error('[SCHEDULER] not started, no database connection');
+}

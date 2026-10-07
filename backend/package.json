@@ -2,6 +2,7 @@
   "dependencies": {
     "@apollo/server": "^5.5.1",
     "graphql": "^16.14.2",
-    "mongodb": "^7.6.0"
+    "mongodb": "^7.6.0",
+    "puppeteer": "^25.12.0"
   }
 }

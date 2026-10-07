@@ -647,7 +647,8 @@
       "dependencies": [
         "npm:@apollo/server@^5.5.1",
         "npm:graphql@^16.14.2",
-        "npm:mongodb@^7.6.0"
+        "npm:mongodb@^7.6.0",
+        "npm:puppeteer@^25.12.0"
       ]
     }
   }
