@@ -9,6 +9,7 @@ import { crawl_interval_ms } from './interval.ts';
 import * as matching from './matching.ts';
 import { launch_crawler_browser, read_post, CRAWLER_CHROME_DIR } from './replay.ts';
 import { is_solve_active } from './solves.ts';
+import { on_hold_solved } from './hold_events.ts';
 
 export type TickReport = {
   profiles : number;
@@ -317,6 +318,10 @@ export const start_scheduler = () : void => {
 
   if(timer !== undefined){ return; }
 
+  //a solved hold moves the crawl forward on its own: the profile is run again
+  //the moment its solve window closes, no waiting for the next interval
+  register_solve_resume();
+
   const every = crawl_interval_ms();
   timer = setInterval(guarded_tick, every);
 
@@ -356,6 +361,11 @@ export const retry_dork_hold = async ( hold_id : string ) : Promise<boolean> => 
   const hold = await db_manager.find_dork_hold(hold_id);
   if(!hold || hold.state !== 'SOLVED'){ return false; }
 
+  //a recording hold is a draft the recorder itself is waiting on. running the
+  //whole profile here would read a profile with no selectors, so it is left to
+  //the recording flow's own loop
+  if(hold.purpose === 'recording'){ return false; }
+
   const profiles = await db_manager.get_profiles();
   const profile = profiles.find((candidate) => candidate.id === hold.profile_id);
   if(!profile){
@@ -393,4 +403,21 @@ export const retry_dork_hold = async ( hold_id : string ) : Promise<boolean> => 
     release_dir();
   }
 
+};
+
+/*
+ * the bridge the solve window pulls to run the blocked profile again. it is a
+ * hook rather than a direct call so solves.ts does not have to import the
+ * scheduler and close the import cycle
+ */
+let solve_resume_hooked = false;
+
+const register_solve_resume = () : void => {
+  if(solve_resume_hooked){ return; }
+  solve_resume_hooked = true;
+  on_hold_solved((hold_id) => {
+    retry_dork_hold(hold_id).catch((err) => {
+      console.error(`[SCHEDULER] auto retry after a solve failed for ${hold_id}: ${err}`);
+    });
+  });
 };

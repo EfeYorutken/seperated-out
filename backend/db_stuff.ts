@@ -37,6 +37,9 @@ export type DorkHold = {
   dork : string;
   cause : DorkHoldCause;
   state : DorkHoldState;
+  //whether a tick or a recording session is behind it, so an auto resume can
+  //tell the two apart
+  purpose : DorkHoldPurpose;
   created_at : string;
   solved_at : string | null;
 };
@@ -547,6 +550,7 @@ export const hold_dork = async(
       dork,
       cause,
       state : 'HOLDING',
+      purpose,
       created_at : new Date().toISOString(),
       solved_at : null
     };

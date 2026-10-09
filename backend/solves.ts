@@ -3,6 +3,7 @@ import type { Browser, Page } from 'puppeteer';
 import * as db_manager from './db_stuff.ts';
 import { acquire_crawler_dir } from './chrome_lock.ts';
 import { launch_crawler_browser, CRAWLER_CHROME_DIR } from './replay.ts';
+import { emit_hold_solved } from './hold_events.ts';
 
 const NAV_TIMEOUT_MS = 30_000;
 //a tick or the recording dork can hold the crawler chrome dir for a while; the
@@ -54,22 +55,30 @@ export const start_solve = async ( hold_id : string ) : Promise<boolean> => {
   //the gap between the click and the launch
   windows.set(hold_id, win);
 
-  const close_browser = () : void => {
+  //awaited by its callers: the cookies chrome writes on the way down are the
+  //whole point of the solve, and a retry launched before they land sees the
+  //wall again
+  const close_browser = async () : Promise<void> => {
     const dying = win.browser;
     win.browser = null;
-    if(dying){ dying.close().catch(() => {}); }
+    if(dying){ await dying.close().catch(() => {}); }
   };
 
   const finish = async () : Promise<void> => {
     if(win.finished){ return; }
     win.finished = true;
-    close_browser();
+    //and only once the browser has actually let go: the retry is free to launch
+    //the moment the dir is released, so releasing it first can lose the cookies
+    await close_browser();
     win.release_dir?.();
     win.release_dir = null;
     win.teardown = null;
     windows.delete(hold_id);
     await db_manager.resolve_dork_hold(hold_id);
     console.log(`[SOLVE] hold ${hold_id} solved, cookies saved to the crawler chrome dir`);
+    //let the scheduler run the profile again right away instead of making the
+    //user press retry or wait out the interval
+    emit_hold_solved(hold_id);
   };
 
   try{
@@ -105,9 +114,9 @@ export const start_solve = async ( hold_id : string ) : Promise<boolean> => {
   catch(err){
     console.error(`[SOLVE] could not open a window for hold ${hold_id}: ${err}`);
     win.finished = true;
+    await close_browser();
     win.release_dir?.();
     win.release_dir = null;
-    close_browser();
     windows.delete(hold_id);
     //nothing was solved, so the hold is back on the shelf for another try
     await db_manager.mark_dork_hold_holding(hold_id);

@@ -64,6 +64,8 @@ type DorkHold{
   dork : String
   cause : DorkHoldCause
   state : DorkHoldState
+  #tick or recording, so the panel can tell an auto-resumed hold from a draft
+  purpose : String
   created_at : String
   solved_at : String
 }

@@ -8,6 +8,30 @@ const PAGE_PAUSE_MS = 1000;
 //how far down the result list one tick is willing to walk
 const MAX_RESULTS = 100;
 
+//the entry a serp is reached by: 'typed' warms up google.com and types into the
+//search box like a person would, 'direct' is the cold GET /search the paging
+//steps and the test searchers fall back to
+type SerpEntry = 'typed' | 'direct';
+
+const HOMEPAGE_URL = 'https://www.google.com/';
+const SEARCH_BOX_SELECTOR = 'textarea[name="q"], input[name="q"]';
+
+//how fast the dork is typed into the box, a real keystroke stream rather than a
+//paste, which is itself a tell
+const TYPING_DELAY_MS = (() => {
+  const raw = Deno.env.get('DORK_TYPING_DELAY_MS');
+  if(!raw){ return 40; }
+  const parsed = Number(raw);
+  return Number.isFinite(parsed) && parsed >= 0 ? parsed : 40;
+})();
+
+//the human entry can be switched off, the paging fallback and a plain request
+//from a hostile network still want the old cold path
+const human_entry_enabled = () : boolean => {
+  const raw = (Deno.env.get('DORK_HUMAN_ENTRY') ?? '').trim().toLowerCase();
+  return !(raw === '0' || raw === 'false' || raw === 'off' || raw === 'no');
+};
+
 //the deno lib used here has no dom, so the bits evaluate() needs are spelled
 //out instead of taken from the compiler
 type AnchorNode = {
@@ -197,16 +221,114 @@ const pass_consent = async ( page : Page ) : Promise<boolean> => {
 };
 
 /*
- * one visit to the search result page. returns the result links, null when
- * google had nothing for the query, and throws a DorkBlocked when google put a
- * wall (a consent choice or a captcha) between the query and its answers
+ * the human entry: open google, clear the consent wall, type the dork into the
+ * search box and submit it.
+ *
+ * this is the whole point of the exercise. a cold GET /search?q= arrives with
+ * no session, no referer and a history that says bot; a typed query arrives on
+ * the back of a homepage visit, the cookies that visit plants and the suggest
+ * traffic the box itself makes, so the same words are a far less interesting
+ * request to challenge
  */
-const read_serp = async ( page : Page, dork : string, url : string ) : Promise<string[] | null> => {
+const enter_dork = async ( page : Page, dork : string ) : Promise<boolean> => {
 
-  await page.goto(url, {
+  await page.goto(HOMEPAGE_URL, {
     waitUntil : 'domcontentloaded',
     timeout : NAV_TIMEOUT_MS
   });
+
+  if(page.url().includes('consent.google.com')){
+    if(!await pass_consent(page)){
+      throw new DorkBlocked(
+        'consent',
+        dork,
+        'google asked for a consent choice and no button dismissed it'
+      );
+    }
+    await page.goto(HOMEPAGE_URL, {
+      waitUntil : 'domcontentloaded',
+      timeout : NAV_TIMEOUT_MS
+    });
+  }
+
+  await page.waitForSelector(SEARCH_BOX_SELECTOR, { timeout : 10_000 }).catch(() => {});
+
+  const box = await page.$(SEARCH_BOX_SELECTOR);
+
+  if(!box){
+    //no box means google put something in front of the homepage itself
+    if(await captcha_present(page)){
+      throw new DorkBlocked(
+        'captcha',
+        dork,
+        'google served a captcha before the search box appeared'
+      );
+    }
+    throw new DorkBlocked(
+      'consent',
+      dork,
+      'google served no search box on the homepage'
+    );
+  }
+
+  //a triple click clears whatever a previous profile left in the box
+  await box.click({ count : 3 }).catch(() => {});
+  await box.type(dork, { delay : TYPING_DELAY_MS });
+
+  await Promise.all([
+    page.waitForNavigation({
+      waitUntil : 'domcontentloaded',
+      timeout : NAV_TIMEOUT_MS
+    }).catch(() => {}),
+    page.keyboard.press('Enter')
+  ]);
+
+  //the submit is client side and does not always fire waitForNavigation, so the
+  //result url is waited for directly as the sturdier of the two signals
+  await page.waitForFunction(
+    'window.location.pathname.indexOf("/search") === 0',
+    { timeout : 10_000 }
+  ).catch(() => {});
+
+  //false means the typing never turned into a search, the caller falls back to
+  //the plain request rather than reading whatever page it is sitting on
+  return page.url().includes('/search');
+
+};
+
+/*
+ * one visit to the search result page. returns the result links, null when
+ * google had nothing for the query, and throws a DorkBlocked when google put a
+ * wall (a consent choice or a captcha) between the query and its answers.
+ *
+ * entry says how the page is reached: a typed first page goes through the
+ * homepage and the search box, a direct page is the plain GET the paging walk
+ * uses
+ */
+const read_serp = async (
+  page : Page,
+  dork : string,
+  url : string,
+  entry : SerpEntry = 'direct'
+) : Promise<string[] | null> => {
+
+  if(entry === 'typed' && human_entry_enabled()){
+    const reached = await enter_dork(page, dork);
+    //a typed entry that did not land on a result page is not fatal, the plain
+    //request is the safety net it has always been
+    if(!reached){
+      await page.goto(url, {
+        waitUntil : 'domcontentloaded',
+        timeout : NAV_TIMEOUT_MS
+      });
+    }
+  }
+  else{
+    await page.goto(url, {
+      waitUntil : 'domcontentloaded',
+      timeout : NAV_TIMEOUT_MS
+    });
+  }
 
   if(page.url().includes('consent.google.com')){
 
@@ -263,13 +385,20 @@ const google_search = async ( browser : Browser, profile : Profile ) : Promise<s
     const found : string[] = [];
     const seen = new Set<string>();
     let start = 0;
+    let first_page = true;
 
     while(found.length < MAX_RESULTS){
 
       //num asks for a wide page, start walks it. start advances by what google
       //actually sent rather than by what was asked for, so a google that
       //silently answers with ten results cannot skip the ten after them
-      const links = await read_serp(page, dork, serp_url(dork, start));
+      //
+      //only the first page is typed into the box, the pages after it are the
+      //plain start walk: there is no search box to use on a result list
+      const entry : SerpEntry = first_page ? 'typed' : 'direct';
+      first_page = false;
+
+      const links = await read_serp(page, dork, serp_url(dork, start), entry);
 
       //a page of nothing but repeats means google has no more of them to give
       if(!links){ break; }
@@ -330,7 +459,7 @@ const google_first_result = async ( browser : Browser, profile : Profile ) : Pro
   const page = await browser.newPage();
 
   try{
-    const links = await read_serp(page, dork, serp_url(dork, 0));
+    const links = await read_serp(page, dork, serp_url(dork, 0), 'typed');
     return links?.[0] ?? null;
   }
   finally{

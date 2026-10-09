@@ -55,11 +55,19 @@ export const launch_crawler_browser = async (
   const settings = {
     headless : options.headless,
     executablePath : CHROMIUM_PATH,
-    defaultViewport : options.headless ? { width : 1366, height : 900 } : null,
+    //one viewport for both modes: a headless that renders at one size and a
+    //headful window at another is itself a tell, especially when a solve in
+    //the headful profile is meant to carry into a headless dork
+    defaultViewport : { width : 1366, height : 900 },
     //left out entirely when not asked for, so a caller that wants a throwaway
     //browser still gets one
     ...(options.user_data_dir ? { userDataDir : options.user_data_dir } : {}),
-    args : ['--disable-dev-shm-usage']
+    args : [
+      '--disable-dev-shm-usage',
+      //the flag that unsets navigator.webdriver, the loudest automation tell
+      //there is. the dork, the solve window and the recorder all share it
+      '--disable-blink-features=AutomationControlled'
+    ]
   };
 
   try{

@@ -12,6 +12,8 @@ export type DorkHold = {
   dork : string;
   cause : DorkHoldCause;
   state : DorkHoldState;
+  //whether a tick or a recording session raised it
+  purpose? : 'tick' | 'recording';
   created_at : string;
   solved_at : string | null;
 };

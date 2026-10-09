@@ -6,7 +6,7 @@ import { PAGE_SCRIPT } from './page_script.ts';
 import { launch_crawler_browser, CRAWLER_CHROME_DIR, RECORDER_CHROME_DIR } from './replay.ts';
 import * as db_manager from './db_stuff.ts';
 import { acquire_crawler_dir } from './chrome_lock.ts';
-import { DorkBlocked, is_dork_blocked, run_dork_first } from './dork.ts';
+import { DorkBlocked, build_dork, is_dork_blocked, run_dork_first } from './dork.ts';
 
 export type CrawlingSessionStatus = 'PENDING' | 'RECORDING' | 'DONE' | 'FAILED';
 
@@ -262,7 +262,9 @@ const run_session = async ( session_id : string, profile : Profile ) => {
           if(browser){ await browser.close().catch(() => {}); browser = null; }
 
           if(!first){
-            return { failed : 'the dork found no page, adjust the url section or the keywords' };
+            const dork = build_dork(profile);
+            console.error(`[CRAWLING] no results for dork: ${dork}`);
+            return { failed : 'the dork found no page, adjust the url section or the keywords (dork: ' + dork + ')' };
           }
 
           session.view.page_url = first;
